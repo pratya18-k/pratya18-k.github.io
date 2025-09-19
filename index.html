@@ -480,6 +480,9 @@
         let transactions = [];
         let database = {};
 
+        // Updated Google Sheets URL
+        const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwB-GWz0h2q4ACcbp69AXvYg3PK0gcmh-s--tRFrz_mvSR3PeeTw2d4rI3NGYBC32yTjrQ/exec';
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             initializeDatabase();
@@ -1120,10 +1123,7 @@
             }, 4000);
         }
 
-        // Google Sheets Integration (แก้ไขปัญหา CORS)
-        const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzuOGFdraiTIw1igtWosDhUf_OfQNn82b-qOJ22mUSUD21CY8bmkzME80SkK0VFoikTuw/exec';
-
-        // Sync single transaction to Google Sheets (ใช้วิธี POST)
+        // Fixed Google Sheets Integration without no-cors
         async function syncToGoogleSheets() {
             const form = document.getElementById('transactionForm');
             const syncButton = document.getElementById('syncButton');
@@ -1199,7 +1199,19 @@
                 
             } catch (error) {
                 console.error('Error syncing to Google Sheets:', error);
-                showNotification(`เกิดข้อผิดพลาดในการส่งไป Google Sheets: ${error.message}`, 'error');
+                
+                // แม้จะมี error แต่ยังคงบันทึกในระบบ
+                transaction.id = Date.now();
+                transactions.push(transaction);
+                saveDataToStorage();
+                updateStats();
+                updateTransactionTable();
+                
+                form.reset();
+                document.getElementById('date').valueAsDate = new Date();
+                updateDayOfWeek();
+                
+                showNotification(`บันทึกในระบบเรียบร้อยแล้ว แต่เกิดข้อผิดพลาดในการส่งไป Google Sheets: ${error.message}`, 'warning');
             } finally {
                 // คืนสถานะปุ่ม
                 syncButton.disabled = false;
@@ -1207,7 +1219,7 @@
             }
         }
 
-        // Sync all transactions to Google Sheets (ใช้วิธี POST)
+        // Sync all transactions to Google Sheets (Fixed version)
         async function syncAllToGoogleSheets() {
             const syncAllButton = document.getElementById('syncAllButton');
             
