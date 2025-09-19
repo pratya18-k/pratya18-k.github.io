@@ -1,53 +1,40 @@
 function doGet(e) {
-  return ContentService.createTextOutput("Finance API Ready. Please use POST for data submission.");
+  return ContentService.createTextOutput("API is working! Use POST to send data.");
 }
 
 function doPost(e) {
   try {
-    const sheet = SpreadsheetApp.openById('1z-v1f0PhHaO8vOWLBod7zEsTU8EdB2gJS2smr7gd-zo').getActiveSheet();
+    // เปลี่ยน SPREADSHEET_ID เป็น ID ของ Google Sheets ของคุณ
+    const SPREADSHEET_ID = '1SSKtgEe5fFaVPMxefb_v1uzee4WCOuiiCu2MXE071vM';
+    
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getActiveSheet();
     const data = JSON.parse(e.postData.contents);
     
-    if (!Array.isArray(data)) {
-      // Handle single transaction
-      const rowNumber = sheet.getLastRow();
-      const newRow = createRow(rowNumber, data);
-      sheet.appendRow(newRow);
-    } else {
-      // Handle multiple transactions
-      const rows = [];
-      const lastRow = sheet.getLastRow();
-      data.forEach((transaction, index) => {
-        const rowNumber = lastRow + index;
-        rows.push(createRow(rowNumber, transaction));
-      });
-      sheet.getRange(lastRow + 1, 1, rows.length, rows[0].length).setValues(rows);
-    }
-
+    // บันทึกข้อมูลลงแถวใหม่
+    const now = new Date();
+    const row = [
+      now.toLocaleDateString('th-TH'),
+      now.toLocaleTimeString('th-TH'),
+      data.name || '',
+      data.email || '',
+      data.message || ''
+    ];
+    
+    sheet.appendRow(row);
+    
     return ContentService
-      .createTextOutput(JSON.stringify({ status: 'success', message: 'Data saved successfully' }))
+      .createTextOutput(JSON.stringify({
+        status: 'success',
+        message: 'Data saved successfully!'
+      }))
       .setMimeType(ContentService.MimeType.JSON);
-
-  } catch (err) {
+      
+  } catch (error) {
     return ContentService
-      .createTextOutput(JSON.stringify({ status: 'error', message: err.toString() }))
+      .createTextOutput(JSON.stringify({
+        status: 'error', 
+        message: error.toString()
+      }))
       .setMimeType(ContentService.MimeType.JSON);
   }
-}
-
-function createRow(rowNumber, transaction) {
-  return [
-    rowNumber,
-    transaction.date,
-    transaction.time,
-    transaction.category,
-    transaction.subCategory,
-    transaction.paymentType,
-    transaction.paymentDetail,
-    transaction.detail,
-    transaction.fund || '',
-    transaction.type === 'Income' ? transaction.amount : '',
-    transaction.type === 'Expenses' ? transaction.amount : '',
-    transaction.atth || '',
-    transaction.comment || ''
-  ];
 }
